@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="낙폭계산기">
+<meta name="theme-color" content="#0a0a0f">
+<title>낙폭 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f; --surface: #111118; --card: #16161f; --border: #22222f;
+    --accent-red: #ff3d3d; --accent-green: #00e96b; --accent-gold: #f5c518;
+    --text: #eeeef8; --muted: #55556a;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; min-height: -webkit-fill-available; display: flex; flex-direction: column; overflow-x: hidden; background-image: radial-gradient(ellipse 70% 30% at 10% 5%, rgba(255,61,61,0.07) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 90% 95%, rgba(0,233,107,0.05) 0%, transparent 60%); }
+  .status-bar { height: var(--safe-top); background: transparent; flex-shrink: 0; }
+  .app-header { padding: 18px 24px 14px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .app-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #ff3d3d 0%, #7a0000 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 14px rgba(255,61,61,0.35); flex-shrink: 0; }
+  .app-title { font-family: 'Black Han Sans', sans-serif; font-size: 17px; letter-spacing: 1.5px; color: #fff; line-height: 1.2; }
+  .app-subtitle { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 24px 20px; padding-bottom: calc(24px + var(--safe-bottom)); display: flex; flex-direction: column; gap: 14px; }
+  .input-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; transition: border-color 0.2s; }
+  .input-card:focus-within { border-color: rgba(245,197,24,0.4); box-shadow: 0 0 0 3px rgba(245,197,24,0.06); }
+  .input-step { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
+  .input-label { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 10px; }
+  .input-row { display: flex; align-items: center; gap: 10px; }
+  input[type="number"] { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; width: 100%; -moz-appearance: textfield; -webkit-appearance: none; }
+  input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  input[type="number"]::placeholder { color: var(--border); }
+  .badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; letter-spacing: 1px; flex-shrink: 0; }
+  .badge.ath { background: rgba(255,61,61,0.15); color: #ff7c7c; border: 1px solid rgba(255,61,61,0.25); }
+  .badge.now { background: rgba(245,197,24,0.12); color: #f5c518; border: 1px solid rgba(245,197,24,0.2); }
+  .clear-btn { width: 26px; height: 26px; background: var(--border); border: none; border-radius: 50%; color: var(--muted); font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+  .error-bar { background: rgba(255,61,61,0.1); border: 1px solid rgba(255,61,61,0.25); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #ff7c7c; display: none; }
+  .calc-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #ff3d3d 0%, #b50000 100%); border: none; border-radius: 16px; color: #fff; font-family: 'Black Han Sans', sans-serif; font-size: 18px; letter-spacing: 3px; cursor: pointer; box-shadow: 0 6px 24px rgba(255,61,61,0.3); -webkit-appearance: none; transition: transform 0.12s, box-shadow 0.15s; }
+  .calc-btn:active { transform: scale(0.97); }
+  .result-section { display: none; flex-direction: column; gap: 12px; animation: fadeUp 0.3s ease; }
+  .result-section.show { display: flex; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+  .section-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); padding-left: 2px; }
+  .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 0; display: flex; }
+  .summary-item { flex: 1; text-align: center; }
+  .summary-item + .summary-item { border-left: 1px solid var(--border); }
+  .summary-item-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+  .summary-item-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+  .result-card { border-radius: 18px; padding: 20px; }
+  .result-card.down { background: linear-gradient(135deg, rgba(255,61,61,0.12), rgba(255,61,61,0.04)); border: 1px solid rgba(255,61,61,0.22); }
+  .result-card.up { background: linear-gradient(135deg, rgba(0,233,107,0.1), rgba(0,233,107,0.03)); border: 1px solid rgba(0,233,107,0.2); }
+  .result-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .result-tag { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; }
+  .result-card.down .result-tag { background: rgba(255,61,61,0.15); color: #ff7c7c; }
+  .result-card.up .result-tag { background: rgba(0,233,107,0.12); color: #00e96b; }
+  .result-icon { font-size: 22px; }
+  .result-pct { font-family: 'JetBrains Mono', monospace; font-size: 46px; font-weight: 700; line-height: 1; margin: 8px 0 6px; }
+  .result-card.down .result-pct { color: #ff3d3d; }
+  .result-card.up .result-pct { color: #00e96b; }
+  .result-detail { font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .result-detail strong { color: rgba(238,238,248,0.6); font-weight: 500; }
+  .install-tip { background: rgba(245,197,24,0.06); border: 1px solid rgba(245,197,24,0.15); border-radius: 12px; padding: 12px 14px; font-size: 11.5px; color: rgba(245,197,24,0.8); line-height: 1.6; display: flex; gap: 8px; align-items: flex-start; }
+  .tip-close { margin-left: auto; background: none; border: none; color: var(--muted); font-size: 16px; cursor: pointer; padding: 0; line-height: 1; flex-shrink: 0; }
+</style>
+</head>
+<body>
+<div class="status-bar"></div>
+<div class="app-header">
+  <div class="app-icon">📉</div>
+  <div>
+    <div class="app-title">낙폭 계산기</div>
+    <div class="app-subtitle">Draw-Down Calculator</div>
+  </div>
+</div>
+<div class="scroll-area">
+  <div class="install-tip" id="installTip">
+    <span>📲</span>
+    <div>Safari 하단 <strong>공유버튼 → 홈 화면에 추가</strong>를 누르면 앱처럼 사용할 수 있어요.</div>
+    <button class="tip-close" onclick="document.getElementById('installTip').style.display='none'">✕</button>
+  </div>
+  <div class="input-card">
+    <div class="input-step">STEP 01</div>
+    <div class="input-label">최고점 (ATH)</div>
+    <div class="input-row">
+      <input type="number" id="ath" inputmode="decimal" placeholder="0" min="0" step="any">
+      <span class="badge ath">ATH</span>
+      <button class="clear-btn" onclick="document.getElementById('ath').value=''">✕</button>
+    </div>
+  </div>
+  <div class="input-card">
+    <div class="input-step">STEP 02</div>
+    <div class="input-label">현재 가격</div>
+    <div class="input-row">
+      <input type="number" id="current" inputmode="decimal" placeholder="0" min="0" step="any">
+      <span class="badge now">NOW</span>
+      <button class="clear-btn" onclick="document.getElementById('current').value=''">✕</button>
+    </div>
+  </div>
+  <div class="error-bar" id="errMsg"></div>
+  <button class="calc-btn" onclick="calculate()">③ 계산하기</button>
+  <div class="result-section" id="resultPanel">
+    <div class="section-label">계산 결과</div>
+    <div class="summary-card">
+      <div class="summary-item"><div class="summary-item-label">최고점</div><div class="summary-item-value" id="sumATH">—</div></div>
+      <div class="summary-item"><div class="summary-item-label">현재가</div><div class="summary-item-value" id="sumNow">—</div></div>
+      <div class="summary-item"><div class="summary-item-label">차이</div><div class="summary-item-value" id="sumDiff">—</div></div>
+    </div>
+    <div class="result-card down">
+      <div class="result-top"><span class="result-tag">▼ 낙폭</span><span class="result-icon">📉</span></div>
+      <div class="result-pct" id="dropPct">—</div>
+      <div class="result-detail" id="dropDesc"></div>
+    </div>
+    <div class="result-card up">
+      <div class="result-top"><span class="result-tag">▲ 회복 필요 상승률</span><span class="result-icon">🚀</span></div>
+      <div class="result-pct" id="recoverPct">—</div>
+      <div class="result-detail" id="recoverDesc"></div>
+    </div>
+  </div>
+</div>
+<script>
+  if (window.navigator.standalone) document.getElementById('installTip').style.display='none';
+  function fmt(n){return n.toLocaleString('ko-KR',{maximumFractionDigits:2});}
+  function fmtPct(n){return n%1===0?n.toFixed(0):n.toFixed(2);}
+  function calculate(){
+    const a=parseFloat(document.getElementById('ath').value);
+    const c=parseFloat(document.getElementById('current').value);
+    const err=document.getElementById('errMsg');
+    const panel=document.getElementById('resultPanel');
+    if(isNaN(a)||isNaN(c)||a<=0||c<=0){err.textContent='⚠ 최고점과 현재 가격을 모두 입력해 주세요.';err.style.display='block';panel.classList.remove('show');return;}
+    if(c>a){err.textContent='⚠ 현재 가격이 최고점보다 높습니다.';err.style.display='block';panel.classList.remove('show');return;}
+    if(c===a){err.textContent='⚠ 현재 가격이 최고점과 같습니다.';err.style.display='block';panel.classList.remove('show');return;}
+    err.style.display='none';
+    const drop=((a-c)/a)*100, recover=((a-c)/c)*100, diff=a-c;
+    document.getElementById('sumATH').textContent=fmt(a);
+    document.getElementById('sumNow').textContent=fmt(c);
+    document.getElementById('sumDiff').textContent=fmt(diff);
+    document.getElementById('dropPct').textContent=`-${fmtPct(drop)}%`;
+    document.getElementById('dropDesc').innerHTML=`<strong>${fmt(a)}</strong> → <strong>${fmt(c)}</strong><br>${fmt(diff)} 하락`;
+    document.getElementById('recoverPct').textContent=`+${fmtPct(recover)}%`;
+    document.getElementById('recoverDesc').innerHTML=`<strong>${fmt(c)}</strong> → <strong>${fmt(a)}</strong>로 회복하려면<br>${fmt(diff)} 상승 필요`;
+    panel.classList.remove('show');void panel.offsetWidth;panel.classList.add('show');
+    setTimeout(()=>{panel.scrollIntoView({behavior:'smooth',block:'start'});},80);
+  }
+  document.addEventListener('keydown',(e)=>{if(e.key==='Enter')calculate();});
+</script>
+</body>
+</html>
