@@ -1,411 +1,303 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="낙폭계산기">
-    <meta name="theme-color" content="#0a0a0f">
-    <title>낙폭 계산기</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-        --bg: #0a0a0f; --surface: #111118; --card: #16161f; --border: #22222f;
-        --accent-red: #ff3d3d; --accent-green: #00e96b; --accent-gold: #f5c518;
-        --text: #eeeef8; --muted: #55556a;
-        --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; overscroll-behavior: none; }
-    body { background: var(--bg); color: var(--text); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; min-height: -webkit-fill-available; display: flex; flex-direction: column; overflow-x: hidden; background-image: radial-gradient(ellipse 70% 30% at 10% 5%, rgba(255,61,61,0.07) 0%, transparent 60%), radial-gradient(ellipse 50% 40% at 90% 95%, rgba(0,233,107,0.05) 0%, transparent 60%); }
-    .status-bar { height: var(--safe-top); background: transparent; flex-shrink: 0; }
-    .app-header { padding: 18px 24px 14px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
-    .app-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #ff3d3d 0%, #7a0000 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; box-shadow: 0 4px 14px rgba(255,61,61,0.35); flex-shrink: 0; }
-    .app-title { font-family: 'Black Han Sans', sans-serif; font-size: 17px; letter-spacing: 1.5px; color: #fff; line-height: 1.2; }
-    .app-subtitle { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
-
-    /* 탭 메뉴 */
-    .tab-bar { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; background: var(--surface); }
-    .tab-btn { flex: 1; padding: 12px 8px; background: none; border: none; color: var(--muted); font-family: 'Noto Sans KR', sans-serif; font-size: 12px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; letter-spacing: 0.5px; }
-    .tab-btn.active { color: var(--accent-gold); border-bottom-color: var(--accent-gold); }
-
-    .scroll-area { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 20px 20px; padding-bottom: calc(24px + var(--safe-bottom)); display: flex; flex-direction: column; gap: 14px; }
-    .tab-panel { display: none; flex-direction: column; gap: 14px; }
-    .tab-panel.active { display: flex; }
-
-    .input-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 18px; transition: border-color 0.2s; }
-    .input-card:focus-within { border-color: rgba(245,197,24,0.4); box-shadow: 0 0 0 3px rgba(245,197,24,0.06); }
-    .input-step { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-weight: 500; }
-    .input-label { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 10px; }
-    .input-row { display: flex; align-items: center; gap: 10px; }
-    input[type="text"] { flex: 1; background: transparent; border: none; outline: none; color: #fff; font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 700; width: 100%; }
-    input[type="text"]::placeholder { color: var(--border); }
-    .badge { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 700; letter-spacing: 1px; flex-shrink: 0; }
-    .badge.ath { background: rgba(255,61,61,0.15); color: #ff7c7c; border: 1px solid rgba(255,61,61,0.25); }
-    .badge.now { background: rgba(245,197,24,0.12); color: #f5c518; border: 1px solid rgba(245,197,24,0.2); }
-    .badge.goal { background: rgba(0,233,107,0.12); color: #00e96b; border: 1px solid rgba(0,233,107,0.2); }
-    .clear-btn { width: 26px; height: 26px; background: var(--border); border: none; border-radius: 50%; color: var(--muted); font-size: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
-    .error-bar { background: rgba(255,61,61,0.1); border: 1px solid rgba(255,61,61,0.25); border-radius: 10px; padding: 10px 14px; font-size: 12px; color: #ff7c7c; display: none; }
-    .calc-btn { width: 100%; padding: 18px; background: linear-gradient(135deg, #ff3d3d 0%, #b50000 100%); border: none; border-radius: 16px; color: #fff; font-family: 'Black Han Sans', sans-serif; font-size: 18px; letter-spacing: 3px; cursor: pointer; box-shadow: 0 6px 24px rgba(255,61,61,0.3); -webkit-appearance: none; transition: transform 0.12s, box-shadow 0.15s; }
-    .calc-btn.green { background: linear-gradient(135deg, #00c853 0%, #007a33 100%); box-shadow: 0 6px 24px rgba(0,200,83,0.3); }
-    .calc-btn:active { transform: scale(0.97); }
-
-    /* 결과 섹션 */
-    .result-section { display: none; flex-direction: column; gap: 12px; animation: fadeUp 0.3s ease; }
-    .result-section.show { display: flex; }
-    @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-    .section-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); padding-left: 2px; }
-    .summary-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px 0; display: flex; }
-    .summary-item { flex: 1; text-align: center; }
-    .summary-item + .summary-item { border-left: 1px solid var(--border); }
-    .summary-item-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
-    .summary-item-value { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
-    .result-card { border-radius: 18px; padding: 20px; }
-    .result-card.down { background: linear-gradient(135deg, rgba(255,61,61,0.12), rgba(255,61,61,0.04)); border: 1px solid rgba(255,61,61,0.22); }
-    .result-card.up { background: linear-gradient(135deg, rgba(0,233,107,0.1), rgba(0,233,107,0.03)); border: 1px solid rgba(0,233,107,0.2); }
-    .result-card.neutral { background: linear-gradient(135deg, rgba(245,197,24,0.1), rgba(245,197,24,0.03)); border: 1px solid rgba(245,197,24,0.2); }
-    .result-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-    .result-tag { font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 8px; border-radius: 20px; }
-    .result-card.down .result-tag { background: rgba(255,61,61,0.15); color: #ff7c7c; }
-    .result-card.up .result-tag { background: rgba(0,233,107,0.12); color: #00e96b; }
-    .result-card.neutral .result-tag { background: rgba(245,197,24,0.12); color: #f5c518; }
-    .result-icon { font-size: 22px; }
-    .result-pct { font-family: 'JetBrains Mono', monospace; font-size: 46px; font-weight: 700; line-height: 1; margin: 8px 0 6px; }
-    .result-card.down .result-pct { color: #ff3d3d; }
-    .result-card.up .result-pct { color: #00e96b; }
-    .result-card.neutral .result-pct { color: #f5c518; font-size: 28px; margin-top: 12px; }
-    .result-detail { font-size: 12px; color: var(--muted); line-height: 1.6; }
-    .result-detail strong { color: rgba(238,238,248,0.6); font-weight: 500; }
-
-    /* 게이지 바 */
-    .gauge-wrap { margin-top: 14px; }
-    .gauge-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 6px; }
-    .gauge-bar { height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
-    .gauge-fill { height: 100%; border-radius: 99px; transition: width 0.8s cubic-bezier(0.4,0,0.2,1); background: linear-gradient(90deg, #00e96b, #ff3d3d); }
-
-    /* 공유 / 복사 버튼 */
-    .action-row { display: flex; gap: 10px; }
-    .action-btn { flex: 1; padding: 13px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; }
-    .action-btn:active { background: var(--border); }
-
-    /* 히스토리 */
-    .history-empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 13px; line-height: 2; }
-    .history-item { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .history-left { flex: 1; min-width: 0; }
-    .history-prices { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .history-drop { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 700; color: #ff3d3d; }
-    .history-recover { font-size: 11px; color: #00e96b; }
-    .history-time { font-size: 10px; color: var(--muted); text-align: right; flex-shrink: 0; }
-    .history-del { width: 28px; height: 28px; background: rgba(255,61,61,0.1); border: 1px solid rgba(255,61,61,0.2); border-radius: 50%; color: #ff7c7c; font-size: 13px; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
-    .history-clear-btn { width: 100%; padding: 12px; background: rgba(255,61,61,0.08); border: 1px solid rgba(255,61,61,0.2); border-radius: 12px; color: #ff7c7c; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; cursor: pointer; }
-    </style>
-  </head>
-  <body>
-    <div class="status-bar"></div>div>
-    <div class="app-header">
-        <div class="app-icon">📉</div>div>
-        <div>
-              <div class="app-title">낙폭 계산기</div>
-              <div class="app-subtitle">Draw-Down Calculator</div>
-        </div>
-    </div>
-
-    <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab('calc')">📊 낙폭 계산</button>button>
-        <button class="tab-btn" onclick="switchTab('target')">🎯 목표가 역산</button>button>
-        <button class="tab-btn" onclick="switchTab('break')">⚖️ 손익분기점</button>button>
-        <button class="tab-btn" onclick="switchTab('history')">🕐 히스토리</button>button>
-    </div>
-
-    <div class="scroll-area">
-
-        <!-- 탭1: 낙폭 계산 -->
-        <div class="tab-panel active" id="tab-calc">
-              <div class="input-card">
-                      <div class="input-step">STEP 01</div>
-                      <div class="input-label">최고점 (ATH)</div>
-                      <div class="input-row">
-                                <input type="text" id="ath" inputmode="decimal" placeholder="0" oninput="fmtInput(this)">
-                                <span class="badge ath">ATH</span>span>
-                                <button class="clear-btn" onclick="clearInput('ath')">✕</button>button>
-                      </div>
-              </div>
-              <div class="input-card">
-                      <div class="input-step">STEP 02</div>
-                      <div class="input-label">현재 가격</div>
-                      <div class="input-row">
-                                <input type="text" id="current" inputmode="decimal" placeholder="0" oninput="fmtInput(this)">
-                                <span class="badge now">NOW</span>span>
-                                <button class="clear-btn" onclick="clearInput('current')">✕</button>button>
-                      </div>
-              </div>
-              <div class="error-bar" id="errMsg"></div>
-              <button class="calc-btn" onclick="calculate()">③ 계산하기</button>button>
-
-              <div class="result-section" id="resultPanel">
-                      <div class="section-label">계산 결과</div>
-                      <div class="summary-card">
-                                <div class="summary-item"><div class="summary-item-label">최고점</div><div class="summary-item-value" id="sumATH">—</div></div>
-                                <div class="summary-item"><div class="summary-item-label">현재가</div><div class="summary-item-value" id="sumNow">—</div></div>
-                                <div class="summary-item"><div class="summary-item-label">차이</div><div class="summary-item-value" id="sumDiff">—</div></div>
-                      </div>
-                      <div class="result-card down">
-                                <div class="result-top"><span class="result-tag">▼ 낙폭</span>span><span class="result-icon">📉</span>span></div>
-                                <div class="result-pct" id="dropPct">—</div>
-                                <div class="result-detail" id="dropDesc"></div>
-                                <div class="gauge-wrap">
-                                            <div class="gauge-label"><span>0%</span><span id="gaugeLabel">—</span><span>100%</span></div>
-                                          <div class="gauge-bar"><div class="gauge-fill" id="gaugeFill" style="width:0%"></div></div>
-                                </div>
-                      </div>
-                    <div class="result-card up">
-                            <div class="result-top"><span class="result-tag">▲ 회복 필요 상승률</span><span class="result-icon">🚀</span></div>
-                            <div class="result-pct" id="recoverPct">—</div>
-                            <div class="result-detail" id="recoverDesc"></div>
-                    </div>
-                    <div class="action-row">
-                            <button class="action-btn" onclick="copyResult()">📋 결과 복사</button>button>
-                            <button class="action-btn" onclick="shareResult()">🔗 공유하기</button>button>
-                    </div>
-              </div>
-        </div>
-    
-      <!-- 탭2: 목표가 역산 -->
-      <div class="tab-panel" id="tab-target">
-          <div class="input-card">
-                <div class="input-step">STEP 01</div>
-                <div class="input-label">현재 가격</div>
-                <div class="input-row">
-                        <input type="text" id="t-current" inputmode="decimal" placeholder="0" oninput="fmtInput(this)">
-                        <span class="badge now">NOW</span>
-                        <button class="clear-btn" onclick="clearInput('t-current')">✕</button>button>
-                </div>
-          </div>
-          <div class="input-card">
-                <div class="input-step">STEP 02</div>
-                <div class="input-label">목표 상승률 (%)</div>
-                <div class="input-row">
-                        <input type="text" id="t-pct" inputmode="decimal" placeholder="30" oninput="fmtInput(this)">
-                        <span class="badge goal">%</span>
-                        <button class="clear-btn" onclick="clearInput('t-pct')">✕</button>button>
-                </div>
-          </div>
-          <div class="error-bar" id="errMsgT"></div>
-          <button class="calc-btn green" onclick="calcTarget()">🎯 목표가 계산</button>button>
-          <div class="result-section" id="targetPanel">
-                <div class="section-label">목표가 결과</div>
-                <div class="result-card neutral">
-                        <div class="result-top"><span class="result-tag">🎯 목표가</span><span class="result-icon">📈</span></div>
-                        <div class="result-pct" id="targetPrice">—</div>
-                        <div class="result-detail" id="targetDesc"></div>
-                </div>
-                <div class="action-row">
-                        <button class="action-btn" onclick="copyTarget()">📋 결과 복사</button>button>
-                        <button class="action-btn" onclick="shareTarget()">🔗 공유하기</button>button>
-                </div>
-          </div>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="낙폭계산기">
+<meta name="theme-color" content="#0a0a0f">
+<title>낙폭 계산기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0a0f;--surface:#111118;--card:#16161f;--border:#22222f;--accent-red:#ff3d3d;--accent-green:#00e96b;--accent-gold:#f5c518;--text:#eeeef8;--muted:#55556a;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden;background-image:radial-gradient(ellipse 70% 30% at 10% 5%,rgba(255,61,61,.07) 0%,transparent 60%),radial-gradient(ellipse 50% 40% at 90% 95%,rgba(0,233,107,.05) 0%,transparent 60%)}
+.status-bar{height:var(--safe-top);background:transparent;flex-shrink:0}
+.app-header{padding:18px 24px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);flex-shrink:0}
+.app-icon{width:40px;height:40px;background:linear-gradient(135deg,#ff3d3d,#7a0000);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 14px rgba(255,61,61,.35);flex-shrink:0}
+.app-title{font-family:'Black Han Sans',sans-serif;font-size:17px;letter-spacing:1.5px;color:#fff;line-height:1.2}
+.app-subtitle{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.tab-bar{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.tab-btn{flex:1;padding:12px 4px;background:none;border:none;color:var(--muted);font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s}
+.tab-btn.active{color:var(--accent-gold);border-bottom-color:var(--accent-gold)}
+.scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px;padding-bottom:calc(24px + var(--safe-bottom));display:flex;flex-direction:column;gap:14px}
+.tab-panel{display:none;flex-direction:column;gap:14px}
+.tab-panel.active{display:flex}
+.input-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 18px;transition:border-color .2s}
+.input-card:focus-within{border-color:rgba(245,197,24,.4);box-shadow:0 0 0 3px rgba(245,197,24,.06)}
+.input-step{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;font-weight:500}
+.input-label{font-size:13px;color:var(--text);font-weight:500;margin-bottom:10px}
+.input-row{display:flex;align-items:center;gap:10px}
+input[type=text]{flex:1;background:transparent;border:none;outline:none;color:#fff;font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;width:100%}
+input[type=text]::placeholder{color:var(--border)}
+.badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700;letter-spacing:1px;flex-shrink:0}
+.badge.ath{background:rgba(255,61,61,.15);color:#ff7c7c;border:1px solid rgba(255,61,61,.25)}
+.badge.now{background:rgba(245,197,24,.12);color:#f5c518;border:1px solid rgba(245,197,24,.2)}
+.badge.goal{background:rgba(0,233,107,.12);color:#00e96b;border:1px solid rgba(0,233,107,.2)}
+.clear-btn{width:26px;height:26px;background:var(--border);border:none;border-radius:50%;color:var(--muted);font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.error-bar{background:rgba(255,61,61,.1);border:1px solid rgba(255,61,61,.25);border-radius:10px;padding:10px 14px;font-size:12px;color:#ff7c7c;display:none}
+.calc-btn{width:100%;padding:18px;background:linear-gradient(135deg,#ff3d3d,#b50000);border:none;border-radius:16px;color:#fff;font-family:'Black Han Sans',sans-serif;font-size:18px;letter-spacing:3px;cursor:pointer;box-shadow:0 6px 24px rgba(255,61,61,.3);transition:transform .12s}
+.calc-btn.green{background:linear-gradient(135deg,#00c853,#007a33);box-shadow:0 6px 24px rgba(0,200,83,.3)}
+.calc-btn:active{transform:scale(.97)}
+.result-section{display:none;flex-direction:column;gap:12px;animation:fadeUp .3s ease}
+.result-section.show{display:flex}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.section-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding-left:2px}
+.summary-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px 0;display:flex}
+.summary-item{flex:1;text-align:center}
+.summary-item+.summary-item{border-left:1px solid var(--border)}
+.summary-item-label{font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.summary-item-value{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700}
+.result-card{border-radius:18px;padding:20px}
+.result-card.down{background:linear-gradient(135deg,rgba(255,61,61,.12),rgba(255,61,61,.04));border:1px solid rgba(255,61,61,.22)}
+.result-card.up{background:linear-gradient(135deg,rgba(0,233,107,.1),rgba(0,233,107,.03));border:1px solid rgba(0,233,107,.2)}
+.result-card.neutral{background:linear-gradient(135deg,rgba(245,197,24,.1),rgba(245,197,24,.03));border:1px solid rgba(245,197,24,.2)}
+.result-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.result-tag{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:20px}
+.result-card.down .result-tag{background:rgba(255,61,61,.15);color:#ff7c7c}
+.result-card.up .result-tag{background:rgba(0,233,107,.12);color:#00e96b}
+.result-card.neutral .result-tag{background:rgba(245,197,24,.12);color:#f5c518}
+.result-icon{font-size:22px}
+.result-pct{font-family:'JetBrains Mono',monospace;font-size:46px;font-weight:700;line-height:1;margin:8px 0 6px}
+.result-card.down .result-pct{color:#ff3d3d}
+.result-card.up .result-pct{color:#00e96b}
+.result-card.neutral .result-pct{color:#f5c518;font-size:28px;margin-top:12px}
+.result-detail{font-size:12px;color:var(--muted);line-height:1.6}
+.result-detail strong{color:rgba(238,238,248,.6);font-weight:500}
+.gauge-wrap{margin-top:14px}
+.gauge-label{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:6px}
+.gauge-bar{height:8px;background:var(--border);border-radius:99px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.4,0,.2,1);background:linear-gradient(90deg,#00e96b,#ff3d3d)}
+.action-row{display:flex;gap:10px}
+.action-btn{flex:1;padding:13px;background:var(--card);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s}
+.action-btn:active{background:var(--border)}
+.history-empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;line-height:2}
+.history-item{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.history-left{flex:1;min-width:0}
+.history-prices{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-drop{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:#ff3d3d}
+.history-recover{font-size:11px;color:#00e96b}
+.history-time{font-size:10px;color:var(--muted);text-align:right;flex-shrink:0}
+.history-del{width:28px;height:28px;background:rgba(255,61,61,.1);border:1px solid rgba(255,61,61,.2);border-radius:50%;color:#ff7c7c;font-size:13px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.history-clear-btn{width:100%;padding:12px;background:rgba(255,61,61,.08);border:1px solid rgba(255,61,61,.2);border-radius:12px;color:#ff7c7c;font-family:'Noto Sans KR',sans-serif;font-size:13px;cursor:pointer;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="status-bar"></div>
+<div class="app-header">
+  <div class="app-icon">📉</div>
+  <div>
+    <div class="app-title">낙폭 계산기</div>
+    <div class="app-subtitle">Draw-Down Calculator</div>
+  </div>
+</div>
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('calc')">📊 낙폭</button>
+  <button class="tab-btn" onclick="switchTab('target')">🎯 목표가</button>
+  <button class="tab-btn" onclick="switchTab('break')">⚖️ 손익</button>
+  <button class="tab-btn" onclick="switchTab('history')">🕐 기록</button>
+</div>
+<div class="scroll-area">
+  <div class="tab-panel active" id="tab-calc">
+    <div class="input-card">
+      <div class="input-step">STEP 01</div>
+      <div class="input-label">최고점 (ATH)</div>
+      <div class="input-row">
+        <input type="text" id="ath" inputmode="decimal" placeholder="0" oninput="fmtInput(this)">
+        <span class="badge ath">ATH</span>
+        <button class="clear-btn" onclick="clearInput('ath')">✕</button>
       </div>
-    
-      <!-- 탭3: 손익분기점 -->
-      <div class="tab-panel" id="tab-break">
-          <div class="input-card">
-                <div class="input-step">STEP 01</div>
-                <div class="input-label">매수 평균단가</div>
-                <div class="input-row">
-                        <input type="text" id="b-buy" inputmode="decimal" placeholder="0" oninput="fmtInput(this)">
-                        <span class="badge ath">BUY</span>
-                        <button class="clear-btn" onclick="clearInput('b-buy')">✕</button>button>
-                </div>
-          </div>
-          <div class="input-card">
-                <div class="input-step">STEP 02</div>
-                <div class="input-label">수수료 + 세금 (%)</div>
-                <div class="input-row">
-                        <input type="text" id="b-fee" inputmode="decimal" placeholder="0.5" oninput="fmtInput(this)">
-                        <span class="badge goal">FEE</span>
-                        <button class="clear-btn" onclick="clearInput('b-fee')">✕</button>button>
-                </div>
-          </div>
-          <div class="error-bar" id="errMsgB"></div>
-          <button class="calc-btn" onclick="calcBreakEven()">⚖️ 손익분기점 계산</button>button>
-          <div class="result-section" id="breakPanel">
-                <div class="section-label">손익분기점 결과</div>
-                <div class="result-card neutral">
-                        <div class="result-top"><span class="result-tag">⚖️ 손익분기가</span><span class="result-icon">💰</span></div>
-                        <div class="result-pct" id="breakPrice">—</div>
-                        <div class="result-detail" id="breakDesc"></div>
-                </div>
-                <div class="action-row">
-                        <button class="action-btn" onclick="copyBreak()">📋 결과 복사</button>button>
-                        <button class="action-btn" onclick="shareBreak()">🔗 공유하기</button>button>
-                </div>
-          </div>
-      </div>
-    
-      <!-- 탭4: 히스토리 -->
-      <div class="tab-panel" id="tab-history">
-          <div id="historyList"></div>
-      </div>
-    
     </div>
-  
-  <script>
-    // 탭 전환
-    function switchTab(name) {
-        document.querySelectorAll('.tab-btn').forEach((b,i)=>{
-              b.classList.toggle('active', ['calc','target','break','history'][i]===name);
-        });
-        document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-        document.getElementById('tab-'+name).classList.add('active');
-        if(name==='history') renderHistory();
-    }
-
-    // 숫자 콤마 포맷 입력
-    function fmtInput(el){
-        let v=el.value.replace(/,/g,'');
-        if(v===''||v==='-')return;
-        let num=parseFloat(v);
-        if(isNaN(num))return;
-        let parts=v.split('.');
-        parts[0]=parseInt(parts[0]).toLocaleString('ko-KR');
-        el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];
-    }
-    function clearInput(id){document.getElementById(id).value='';}
-    function parseVal(id){return parseFloat(document.getElementById(id).value.replace(/,/g,''));}
-    function fmt(n){return n.toLocaleString('ko-KR',{maximumFractionDigits:2});}
-    function fmtPct(n){return n%1===0?n.toFixed(0):n.toFixed(2);}
-
-    // 낙폭 계산
-    function calculate(){
-        const a=parseVal('ath'), c=parseVal('current');
-        const err=document.getElementById('errMsg'), panel=document.getElementById('resultPanel');
-        if(isNaN(a)||isNaN(c)||a<=0||c<=0){err.textContent='⚠ 최고점과 현재 가격을 모두 입력해 주세요.';err.style.display='block';panel.classList.remove('show');return;}
-        if(c>a){err.textContent='⚠ 현재 가격이 최고점보다 높습니다.';err.style.display='block';panel.classList.remove('show');return;}
-        if(c===a){err.textContent='⚠ 현재 가격이 최고점과 같습니다.';err.style.display='block';panel.classList.remove('show');return;}
-        err.style.display='none';
-        const drop=((a-c)/a)*100, recover=((a-c)/c)*100, diff=a-c;
-        document.getElementById('sumATH').textContent=fmt(a);
-        document.getElementById('sumNow').textContent=fmt(c);
-        document.getElementById('sumDiff').textContent=fmt(diff);
-        document.getElementById('dropPct').textContent=`-${fmtPct(drop)}%`;
-        document.getElementById('dropDesc').innerHTML=`<strong>${fmt(a)}</strong> → <strong>${fmt(c)}</strong><br>${fmt(diff)} 하락`;
-        document.getElementById('recoverPct').textContent=`+${fmtPct(recover)}%`;
-        document.getElementById('recoverDesc').innerHTML=`<strong>${fmt(c)}</strong> → <strong>${fmt(a)}</strong>로 회복하려면<br>${fmt(diff)} 상승 필요`;
-        document.getElementById('gaugeLabel').textContent=`-${fmtPct(drop)}%`;
-        setTimeout(()=>{document.getElementById('gaugeFill').style.width=Math.min(drop,100)+'%';},100);
-        panel.classList.remove('show');void panel.offsetWidth;panel.classList.add('show');
-        setTimeout(()=>{panel.scrollIntoView({behavior:'smooth',block:'start'});},80);
-        saveHistory(a,c,drop,recover);
-    }
-
-    // 목표가 역산
-    function calcTarget(){
-        const c=parseVal('t-current'), pct=parseVal('t-pct');
-        const err=document.getElementById('errMsgT'), panel=document.getElementById('targetPanel');
-        if(isNaN(c)||c<=0||isNaN(pct)||pct<=0){err.textContent='⚠ 현재 가격과 목표 상승률을 입력해 주세요.';err.style.display='block';panel.classList.remove('show');return;}
-        err.style.display='none';
-        const target=c*(1+pct/100);
-        document.getElementById('targetPrice').textContent=fmt(target);
-        document.getElementById('targetDesc').innerHTML=`현재 <strong>${fmt(c)}</strong> → 목표 <strong>${fmt(target)}</strong><br>+${fmtPct(pct)}% 상승 시 달성`;
-        panel.classList.remove('show');void panel.offsetWidth;panel.classList.add('show');
-    }
-
-    // 손익분기점
-    function calcBreakEven(){
-        const b=parseVal('b-buy'), fee=parseVal('b-fee')||0;
-        const err=document.getElementById('errMsgB'), panel=document.getElementById('breakPanel');
-        if(isNaN(b)||b<=0){err.textContent='⚠ 매수 평균단가를 입력해 주세요.';err.style.display='block';panel.classList.remove('show');return;}
-        err.style.display='none';
-        const bep=b*(1+fee/100);
-        const needPct=((bep-b)/b)*100;
-        document.getElementById('breakPrice').textContent=fmt(bep);
-        document.getElementById('breakDesc').innerHTML=`매수가 <strong>${fmt(b)}</strong> + 수수료 <strong>${fmtPct(fee)}%</strong><br>손익분기점까지 <strong>+${fmtPct(needPct)}%</strong> 상승 필요`;
-        panel.classList.remove('show');void panel.offsetWidth;panel.classList.add('show');
-    }
-
-    // 히스토리 저장/로드
-    function saveHistory(a,c,drop,recover){
-        let h=JSON.parse(localStorage.getItem('nakpok_history')||'[]');
-        h.unshift({a,c,drop,recover,time:Date.now()});
-        if(h.length>30)h=h.slice(0,30);
-        localStorage.setItem('nakpok_history',JSON.stringify(h));
-    }
-    function renderHistory(){
-        const h=JSON.parse(localStorage.getItem('nakpok_history')||'[]');
-        const el=document.getElementById('historyList');
-        if(h.length===0){el.innerHTML='<div class="history-empty">📭 아직 계산 내역이 없어요.<br>낙폭 계산을 하면 여기에 기록돼요.</div>';return;}
-        const timeStr=t=>{const d=new Date(t);return`${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;};
-        el.innerHTML=`<button class="history-clear-btn" onclick="clearHistory()">🗑 전체 기록 삭제</button>`+
-              h.map((it,i)=>`<div class="history-item">
-                    <div class="history-left">
-                            <div class="history-prices">${fmt(it.a)} → ${fmt(it.c)}</div>
-                                    <div class="history-drop">-${fmtPct(it.drop)}%</div>
-                                            <div class="history-recover">회복 필요: +${fmtPct(it.recover)}%</div>
-                                                  </div>
-                                                        <div class="history-time">${timeStr(it.time)}</div>
-                                                              <button class="history-del" onclick="deleteHistory(${i})">✕</button>
-                                                                  </div>`).join('');
-    }
-    function deleteHistory(i){
-        let h=JSON.parse(localStorage.getItem('nakpok_history')||'[]');
-        h.splice(i,1);
-        localStorage.setItem('nakpok_history',JSON.stringify(h));
-        renderHistory();
-    }
-    function clearHistory(){
-        localStorage.removeItem('nakpok_history');
-        renderHistory();
-    }
-
-    // 복사/공유
-    function copyResult(){
-        const a=document.getElementById('sumATH').textContent;
-        const c=document.getElementById('sumNow').textContent;
-        const d=document.getElementById('dropPct').textContent;
-        const r=document.getElementById('recoverPct').textContent;
-        const text=`📉 낙폭 계산기 결과\n최고점: ${a}\n현재가: ${c}\n낙폭: ${d}\n회복 필요 상승률: ${r}\nhttps://pigandbaby.github.io/drop-calculator/`;
-        navigator.clipboard.writeText(text).then(()=>showToast('📋 복사됐어요!')).catch(()=>showToast('복사 실패'));
-    }
-    function shareResult(){
-        const a=document.getElementById('sumATH').textContent;
-        const d=document.getElementById('dropPct').textContent;
-        const r=document.getElementById('recoverPct').textContent;
-        const text=`📉 낙폭 계산기\n최고점 ${a} 기준 낙폭 ${d}, 회복 필요 ${r}\nhttps://pigandbaby.github.io/drop-calculator/`;
-        if(navigator.share){navigator.share({title:'낙폭 계산기',text});}else{copyResult();}
-    }
-    function copyTarget(){
-        const t=document.getElementById('targetPrice').textContent;
-        navigator.clipboard.writeText(`🎯 목표가: ${t}\nhttps://pigandbaby.github.io/drop-calculator/`).then(()=>showToast('📋 복사됐어요!')).catch(()=>showToast('복사 실패'));
-    }
-    function shareTarget(){
-        const t=document.getElementById('targetPrice').textContent;
-        if(navigator.share){navigator.share({title:'목표가 계산기',text:`🎯 목표가: ${t}\nhttps://pigandbaby.github.io/drop-calculator/`});}else{copyTarget();}
-    }
-    function copyBreak(){
-        const b=document.getElementById('breakPrice').textContent;
-        navigator.clipboard.writeText(`⚖️ 손익분기점: ${b}\nhttps://pigandbaby.github.io/drop-calculator/`).then(()=>showToast('📋 복사됐어요!')).catch(()=>showToast('복사 실패'));
-    }
-    function shareBreak(){
-        const b=document.getElementById('breakPrice').textContent;
-        if(navigator.share){navigator.share({title:'손익분기점 계산기',text:`⚖️ 손익분기점: ${b}\nhttps://pigandbaby.github.io/drop-calculator/`});}else{copyBreak();}
-    }
-
-    // 토스트 메시지
-    function showToast(msg){
-        let t=document.getElementById('toast');
-        if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;z-index:9999;transition:opacity 0.3s;white-space:nowrap;';document.body.appendChild(t);}
-        t.textContent=msg;t.style.opacity='1';
-        clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity='0';},2000);
-    }
-
-    document.addEventListener('keydown',(e)=>{if(e.key==='Enter')calculate();});
-  </script>
-  </body>
-</html>html>
-  </script></span></span>
+    <div class="input-card">
+      <div class="input-step">STEP 02</div>
+      <div class="input-label">현재 가격</div>
+      <div class="input-row">
+        <input type="text" id="current" inputmode="decimal" placeholder="0" oninput="fmtInput(this)">
+        <span class="badge now">NOW</span>
+        <button class="clear-btn" onclick="clearInput('current')">✕</button>
+      </div>
+    </div>
+    <div class="error-bar" id="errMsg"></div>
+    <button class="calc-btn" onclick="calculate()">③ 계산하기</button>
+    <div class="result-section" id="resultPanel">
+      <div class="section-label">계산 결과</div>
+      <div class="summary-card">
+        <div class="summary-item"><div class="summary-item-label">최고점</div><div class="summary-item-value" id="sumATH">—</div></div>
+        <div class="summary-item"><div class="summary-item-label">현재가</div><div class="summary-item-value" id="sumNow">—</div></div>
+        <div class="summary-item"><div class="summary-item-label">차이</div><div class="summary-item-value" id="sumDiff">—</div></div>
+      </div>
+      <div class="result-card down">
+        <div class="result-top"><span class="result-tag">▼ 낙폭</span><span class="result-icon">📉</span></div>
+        <div class="result-pct" id="dropPct">—</div>
+        <div class="result-detail" id="dropDesc"></div>
+        <div class="gauge-wrap">
+          <div class="gauge-label"><span>0%</span><span id="gaugeLabel">—</span><span>100%</span></div>
+          <div class="gauge-bar"><div class="gauge-fill" id="gaugeFill" style="width:0%"></div></div>
         </div>
-  </body>
-  </style></title>
-  </head>
+      </div>
+      <div class="result-card up">
+        <div class="result-top"><span class="result-tag">▲ 회복 필요 상승률</span><span class="result-icon">🚀</span></div>
+        <div class="result-pct" id="recoverPct">—</div>
+        <div class="result-detail" id="recoverDesc"></div>
+      </div>
+      <div class="action-row">
+        <button class="action-btn" onclick="copyResult()">📋 결과 복사</button>
+        <button class="action-btn" onclick="shareResult()">🔗 공유하기</button>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" id="tab-target">
+    <div class="input-card">
+      <div class="input-step">STEP 01</div>
+      <div class="input-label">현재 가격</div>
+      <div class="input-row">
+        <input type="text" id="t-current" inputmode="decimal" placeholder="0" oninput="fmtInput(this)">
+        <span class="badge now">NOW</span>
+        <button class="clear-btn" onclick="clearInput('t-current')">✕</button>
+      </div>
+    </div>
+    <div class="input-card">
+      <div class="input-step">STEP 02</div>
+      <div class="input-label">목표 상승률 (%)</div>
+      <div class="input-row">
+        <input type="text" id="t-pct" inputmode="decimal" placeholder="30" oninput="fmtInput(this)">
+        <span class="badge goal">%</span>
+        <button class="clear-btn" onclick="clearInput('t-pct')">✕</button>
+      </div>
+    </div>
+    <div class="error-bar" id="errMsgT"></div>
+    <button class="calc-btn green" onclick="calcTarget()">🎯 목표가 계산</button>
+    <div class="result-section" id="targetPanel">
+      <div class="section-label">목표가 결과</div>
+      <div class="result-card neutral">
+        <div class="result-top"><span class="result-tag">🎯 목표가</span><span class="result-icon">📈</span></div>
+        <div class="result-pct" id="targetPrice">—</div>
+        <div class="result-detail" id="targetDesc"></div>
+      </div>
+      <div class="action-row">
+        <button class="action-btn" onclick="copyTarget()">📋 결과 복사</button>
+        <button class="action-btn" onclick="shareTarget()">🔗 공유하기</button>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" id="tab-break">
+    <div class="input-card">
+      <div class="input-step">STEP 01</div>
+      <div class="input-label">매수 평균단가</div>
+      <div class="input-row">
+        <input type="text" id="b-buy" inputmode="decimal" placeholder="0" oninput="fmtInput(this)">
+        <span class="badge ath">BUY</span>
+        <button class="clear-btn" onclick="clearInput('b-buy')">✕</button>
+      </div>
+    </div>
+    <div class="input-card">
+      <div class="input-step">STEP 02</div>
+      <div class="input-label">수수료 + 세금 (%)</div>
+      <div class="input-row">
+        <input type="text" id="b-fee" inputmode="decimal" placeholder="0.5" oninput="fmtInput(this)">
+        <span class="badge goal">FEE</span>
+        <button class="clear-btn" onclick="clearInput('b-fee')">✕</button>
+      </div>
+    </div>
+    <div class="error-bar" id="errMsgB"></div>
+    <button class="calc-btn" onclick="calcBreakEven()">⚖️ 손익분기점 계산</button>
+    <div class="result-section" id="breakPanel">
+      <div class="section-label">손익분기점 결과</div>
+      <div class="result-card neutral">
+        <div class="result-top"><span class="result-tag">⚖️ 손익분기가</span><span class="result-icon">💰</span></div>
+        <div class="result-pct" id="breakPrice">—</div>
+        <div class="result-detail" id="breakDesc"></div>
+      </div>
+      <div class="action-row">
+        <button class="action-btn" onclick="copyBreak()">📋 결과 복사</button>
+        <button class="action-btn" onclick="shareBreak()">🔗 공유하기</button>
+      </div>
+    </div>
+  </div>
+  <div class="tab-panel" id="tab-history">
+    <div id="historyList"></div>
+  </div>
+</div>
+<script>
+function switchTab(n){document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['calc','target','break','history'][i]===n));document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.getElementById('tab-'+n).classList.add('active');if(n==='history')renderHistory();}
+function fmtInput(el){let v=el.value.replace(/,/g,'');if(v===''||v==='-')return;let parts=v.split('.');parts[0]=parseInt(parts[0]).toLocaleString('ko-KR');if(!isNaN(parseInt(parts[0].replace(/,/g,''))))el.value=parts.length>1?parts[0]+'.'+parts[1]:parts[0];}
+function clearInput(id){document.getElementById(id).value='';}
+function parseVal(id){return parseFloat(document.getElementById(id).value.replace(/,/g,''));}
+function fmt(n){return n.toLocaleString('ko-KR',{maximumFractionDigits:2});}
+function fmtPct(n){return n%1===0?n.toFixed(0):n.toFixed(2);}
+function calculate(){
+  const a=parseVal('ath'),c=parseVal('current');
+  const err=document.getElementById('errMsg'),panel=document.getElementById('resultPanel');
+  if(isNaN(a)||isNaN(c)||a<=0||c<=0){err.textContent='⚠ 최고점과 현재 가격을 모두 입력해 주세요.';err.style.display='block';panel.classList.remove('show');return;}
+  if(c>a){err.textContent='⚠ 현재 가격이 최고점보다 높습니다.';err.style.display='block';panel.classList.remove('show');return;}
+  if(c===a){err.textContent='⚠ 현재 가격이 최고점과 같습니다.';err.style.display='block';panel.classList.remove('show');return;}
+  err.style.display='none';
+  const drop=((a-c)/a)*100,recover=((a-c)/c)*100,diff=a-c;
+  document.getElementById('sumATH').textContent=fmt(a);
+  document.getElementById('sumNow').textContent=fmt(c);
+  document.getElementById('sumDiff').textContent=fmt(diff);
+  document.getElementById('dropPct').textContent='-'+fmtPct(drop)+'%';
+  document.getElementById('dropDesc').innerHTML='<strong>'+fmt(a)+'</strong> → <strong>'+fmt(c)+'</strong><br>'+fmt(diff)+' 하락';
+  document.getElementById('recoverPct').textContent='+'+fmtPct(recover)+'%';
+  document.getElementById('recoverDesc').innerHTML='<strong>'+fmt(c)+'</strong> → <strong>'+fmt(a)+'</strong>로 회복하려면<br>'+fmt(diff)+' 상승 필요';
+  document.getElementById('gaugeLabel').textContent='-'+fmtPct(drop)+'%';
+  setTimeout(()=>{document.getElementById('gaugeFill').style.width=Math.min(drop,100)+'%';},100);
+  panel.classList.remove('show');void panel.offsetWidth;panel.classList.add('show');
+  setTimeout(()=>{panel.scrollIntoView({behavior:'smooth',block:'start'});},80);
+  saveHistory(a,c,drop,recover);
+}
+function calcTarget(){
+  const c=parseVal('t-current'),pct=parseVal('t-pct');
+  const err=document.getElementById('errMsgT'),panel=document.getElementById('targetPanel');
+  if(isNaN(c)||c<=0||isNaN(pct)||pct<=0){err.textContent='⚠ 현재 가격과 목표 상승률을 입력해 주세요.';err.style.display='block';panel.classList.remove('show');return;}
+  err.style.display='none';
+  const target=c*(1+pct/100);
+  document.getElementById('targetPrice').textContent=fmt(target);
+  document.getElementById('targetDesc').innerHTML='현재 <strong>'+fmt(c)+'</strong> → 목표 <strong>'+fmt(target)+'</strong><br>+'+fmtPct(pct)+'% 상승 시 달성';
+  panel.classList.remove('show');void panel.offsetWidth;panel.classList.add('show');
+}
+function calcBreakEven(){
+  const b=parseVal('b-buy'),fee=parseVal('b-fee')||0;
+  const err=document.getElementById('errMsgB'),panel=document.getElementById('breakPanel');
+  if(isNaN(b)||b<=0){err.textContent='⚠ 매수 평균단가를 입력해 주세요.';err.style.display='block';panel.classList.remove('show');return;}
+  err.style.display='none';
+  const bep=b*(1+fee/100),needPct=((bep-b)/b)*100;
+  document.getElementById('breakPrice').textContent=fmt(bep);
+  document.getElementById('breakDesc').innerHTML='매수가 <strong>'+fmt(b)+'</strong> + 수수료 <strong>'+fmtPct(fee)+'%</strong><br>손익분기점까지 <strong>+'+fmtPct(needPct)+'%</strong> 상승 필요';
+  panel.classList.remove('show');void panel.offsetWidth;panel.classList.add('show');
+}
+function saveHistory(a,c,drop,recover){let h=JSON.parse(localStorage.getItem('nakpok_history')||'[]');h.unshift({a,c,drop,recover,time:Date.now()});if(h.length>30)h=h.slice(0,30);localStorage.setItem('nakpok_history',JSON.stringify(h));}
+function renderHistory(){
+  const h=JSON.parse(localStorage.getItem('nakpok_history')||'[]');
+  const el=document.getElementById('historyList');
+  if(h.length===0){el.innerHTML='<div class="history-empty">📭 아직 계산 내역이 없어요.<br>낙폭 계산을 하면 여기에 기록돼요.</div>';return;}
+  const ts=t=>{const d=new Date(t);return(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours()+':'+String(d.getMinutes()).padStart(2,'0');};
+  el.innerHTML='<button class="history-clear-btn" onclick="clearHistory()">🗑 전체 기록 삭제</button>'+h.map((it,i)=>'<div class="history-item"><div class="history-left"><div class="history-prices">'+fmt(it.a)+' → '+fmt(it.c)+'</div><div class="history-drop">-'+fmtPct(it.drop)+'%</div><div class="history-recover">회복: +'+fmtPct(it.recover)+'%</div></div><div class="history-time">'+ts(it.time)+'</div><button class="history-del" onclick="deleteHistory('+i+')">✕</button></div>').join('');
+}
+function deleteHistory(i){let h=JSON.parse(localStorage.getItem('nakpok_history')||'[]');h.splice(i,1);localStorage.setItem('nakpok_history',JSON.stringify(h));renderHistory();}
+function clearHistory(){localStorage.removeItem('nakpok_history');renderHistory();}
+function copyResult(){const a=document.getElementById('sumATH').textContent,c=document.getElementById('sumNow').textContent,d=document.getElementById('dropPct').textContent,r=document.getElementById('recoverPct').textContent;navigator.clipboard.writeText('📉 낙폭 계산기 결과
+최고점: '+a+'
+현재가: '+c+'
+낙폭: '+d+'
+회복 필요: '+r+'
+https://pigandbaby.github.io/drop-calculator/').then(()=>showToast('📋 복사됐어요!')).catch(()=>showToast('복사 실패'));}
+function shareResult(){const a=document.getElementById('sumATH').textContent,d=document.getElementById('dropPct').textContent,r=document.getElementById('recoverPct').textContent,text='📉 낙폭 계산기
+최고점 '+a+' 기준 낙폭 '+d+', 회복 필요 '+r+'
+https://pigandbaby.github.io/drop-calculator/';if(navigator.share)navigator.share({title:'낙폭 계산기',text});else copyResult();}
+function copyTarget(){const t=document.getElementById('targetPrice').textContent;navigator.clipboard.writeText('🎯 목표가: '+t+'
+https://pigandbaby.github.io/drop-calculator/').then(()=>showToast('📋 복사됐어요!')).catch(()=>showToast('복사 실패'));}
+function shareTarget(){const t=document.getElementById('targetPrice').textContent;if(navigator.share)navigator.share({title:'목표가',text:'🎯 목표가: '+t+'
+https://pigandbaby.github.io/drop-calculator/'});else copyTarget();}
+function copyBreak(){const b=document.getElementById('breakPrice').textContent;navigator.clipboard.writeText('⚖️ 손익분기점: '+b+'
+https://pigandbaby.github.io/drop-calculator/').then(()=>showToast('📋 복사됐어요!')).catch(()=>showToast('복사 실패'));}
+function shareBreak(){const b=document.getElementById('breakPrice').textContent;if(navigator.share)navigator.share({title:'손익분기점',text:'⚖️ 손익분기점: '+b+'
+https://pigandbaby.github.io/drop-calculator/'});else copyBreak();}
+function showToast(msg){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:99px;font-size:13px;z-index:9999;transition:opacity .3s;white-space:nowrap;';document.body.appendChild(t);}t.textContent=msg;t.style.opacity='1';clearTimeout(t._to);t._to=setTimeout(()=>{t.style.opacity='0';},2000);}
+document.addEventListener('keydown',e=>{if(e.key==='Enter')calculate();});
+</script>
+</body>
+</html>
