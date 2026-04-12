@@ -1,0 +1,31 @@
+{
+  "name": "MDD 계산기",
+  "short_name": "MDD",
+  "description": "주식·코인 최대 낙폭(MDD) 및 손익분기점 참고용 계산기",
+  "start_url": "/drop-calculator/",
+  "scope": "/drop-calculator/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
+  "lang": "ko",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
